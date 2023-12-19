@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+    <meta property="og:title" content="Biz Connect" />
+    <meta property="og:description" content="Bersama Komunitas Bisnis: Temukan, Bagikan, Bangun Bersama!" />
+    <meta property="og:image" content="{{ url_for('static', filename='ogimage.png') }}" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Login</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function login() {
+            let usernameOrEmail = $('#username').val();
+            let password = $('#password').val();
+
+            if (!usernameOrEmail || !password) {
+                alert('Silakan masukkan baik username/email dan password.');
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '/sign_in',
+                data: {
+                    username_give: usernameOrEmail,
+                    email_give: usernameOrEmail,
+                    password_give: password,
+                },
+                success: function (response) {
+                    console.log(response);
+                    if (response.result === 'success') {
+                        document.cookie = 'mytoken=' + response.token;
+
+                        // Tambahkan penanganan peran pengguna
+                        if (response.role === 'admin') {
+                            window.location.replace('/admin');
+                        } else {
+                            window.location.replace('/');
+                        }
+                    } else {
+                        alert('Login gagal. ' + response.msg);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error saat login:', error);
+                    $('#loginMessage').text('Error saat login. Silakan coba lagi.').addClass('text-danger');
+                },
+            });
+        }
+
+        $('form').submit(function (event) {
+            event.preventDefault();
+            login();
+        });
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="dftr">Atau,<span><a href="{{ url_for('sign_up') }}">Register</a></span></p>
+                <h2>Login</h2>
+                <form onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="username">Username/Email:</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col text-center">
+                                <button type="submit" class="btn btn-block btn-primary" onclick="login()">Login</button>
+                                <div id="loginMessage" class="text-danger"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <p class="lpw">
+            <a href="/templates/forget_pw.html">Lupa Password ?</a>
+        </p>
+    </div>
+</body>
+
+</html>

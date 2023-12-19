@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+    <meta property="og:title" content="Biz Connect" />
+    <meta property="og:description" content="Bersama Komunitas Bisnis: Temukan, Bagikan, Bangun Bersama!" />
+    <meta property="og:image" content="{{ url_for('static', filename='ogimage.png') }}" />
+    <title>Komunitas Bisnis</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- jQuery (required for Bootstrap JS) -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- Bootstrap JS and Popper.js (optional but recommended) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script>
+
+        function toggleDropdown() {
+            var dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = (dropdownContent.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function showThreads() {
+            document.getElementById('contentThreads').style.display = 'block';
+            document.getElementById('contentEvents').style.display = 'none';
+            document.getElementById('contentInfo').style.display = 'none';
+            document.getElementById('tombolThread').style.display = 'flex';
+        }
+
+        function showEvents() {
+            document.getElementById('contentThreads').style.display = 'none';
+            document.getElementById('contentEvents').style.display = 'block';
+            document.getElementById('contentInfo').style.display = 'none';
+            document.getElementById('tombolThread').style.display = 'none';
+        }
+
+        function showInfo() {
+            document.getElementById('contentThreads').style.display = 'none';
+            document.getElementById('contentEvents').style.display = 'none';
+            document.getElementById('contentInfo').style.display = 'block';
+            document.getElementById('tombolThread').style.display = 'none';
+        }
+
+        function submitEventForm() {
+            // Mengambil data formulir acara
+            var title = $('#eventTitle').val();
+            var content = $('#eventContent').val();
+            var image = $('#eventImage')[0].files[0];
+
+            // Membuat objek FormData untuk mengirim data formulir
+            var formData = new FormData();
+            formData.append('title', title);
+            formData.append('content', content);
+            formData.append('image', image);
+
+            // Menggunakan jQuery Ajax untuk mengirim data formulir ke rute create_event
+            $.ajax({
+                url: '/create_event',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data.result === 'success') {
+                        alert('Acara berhasil dibuat!');
+                        var createEventModal = new bootstrap.Modal(document.getElementById('createEventModal'));
+                        createEventModal.hide();
+                        window.location.reload();
+                    } else {
+                        alert('Gagal membuat acara. ' + data.msg);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+        function submitThreadForm() {
+            // Mengambil data formulir thread
+            var postContent = $('#postContent').val();
+            var imageUpload = $('#imageUpload')[0].files[0];
+
+            // Membuat objek FormData untuk mengirim data formulir
+            var formData = new FormData();
+            formData.append('postContent', postContent);
+            formData.append('imageUpload', imageUpload);
+
+            // Menggunakan jQuery Ajax untuk mengirim data formulir ke rute create_thread
+            $.ajax({
+                url: '/create_thread',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data.result === 'success') {
+                        alert('Thread berhasil dibuat!');
+                        // Optional: Reload or update the thread list on the page
+                        window.location.reload();
+                    } else {
+                        alert('Gagal membuat thread. ' + data.msg);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+        function deleteThread(postContent) {
+            var confirmDelete = confirm('Apakah Anda yakin ingin menghapus thread ini?');
+
+            if (confirmDelete) {
+                // Menggunakan jQuery Ajax untuk mengirim permintaan DELETE ke rute delete_thread
+                $.ajax({
+                    url: '/delete_thread',
+                    type: 'POST',
+                    data: {
+                        post_content: postContent
+                    },
+                    success: function (data) {
+                        if (data.result === 'success') {
+                            alert('Thread berhasil dihapus!');
+                            // Optional: Reload or update the thread list on the page
+                            window.location.reload();
+                        } else {
+                            alert('Gagal menghapus thread. ' + data.msg);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        }
+        function deleteEvent(title) {
+            var confirmDelete = confirm('Apakah Anda yakin ingin menghapus acara ini?');
+
+            if (confirmDelete) {
+                // Menggunakan jQuery Ajax untuk mengirim permintaan DELETE ke rute delete_event
+                $.ajax({
+                    url: '/delete_event',
+                    type: 'POST',
+                    data: { title: title },  // Pastikan parameter yang dibutuhkan dikirimkan
+                    success: function (data) {
+                        if (data.result === 'success') {
+                            alert('Acara berhasil dihapus!');
+                            // Optional: Reload or update the event list on the page
+                            window.location.reload();
+                        } else {
+                            alert('Gagal menghapus acara. ' + data.msg);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        }
+
+    </script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 20px;
+        }
+
+        header {
+            background-color: #1da1f2;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo img {
+            max-width: 64;
+            max-height: 64;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .profile img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 5px;
+        }
+
+        .profile-name {
+            color: #fff;
+        }
+
+        nav {
+            background-color: #fff;
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin: auto;
+        }
+
+        .nav-buttons button {
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #1da1f2;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        .thread,
+        .event,
+        .info {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .thread h2,
+        .event h2,
+        .info h2 {
+            margin-bottom: 10px;
+            color: #1da1f2;
+        }
+
+        .thread span,
+        .event span,
+        .info span {
+            font-style: italic;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .ellipsis-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .ellipsis-btn:hover {
+            color: #ddd;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            right: 0;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .info-image {
+            max-width: 600px;
+            max-height: 600px;
+            width: auto;
+            height: auto;
+            margin-top: 10px;
+        }
+
+        .custom-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .profile-pic {
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        .logo {
+            top: 2500px;
+            left: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #1da1f2;
+            border-radius: 60%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo img {
+            max-width: 200%;
+            max-height: 196%;
+            border-radius: 70px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a class="logo" href="/">
+            <img src="{{ url_for('static', filename='logo.png') }}" />
+        </a>
+        <div class="profile">
+            <a class="img is-32x32" href="/user/{{ user_info.username }}">
+                <img src="{{ url_for('static', filename=user_info.profile_pic_real) }}">
+            </a>
+            <a class="profile-name">{{ user_info.username }}</a>
+        </div>
+        <div class="dropdown">
+            <button class="ellipsis-btn" onclick="toggleDropdown()">☰</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <nav class="mb-4">
+        <div class="nav-buttons">
+            <button type="button" class="btn btn-light" onclick="showThreads()">Threads</button>
+            <button type="button" class="btn btn-light" onclick="showEvents()">Acara</button>
+            <button type="button" class="btn btn-light" onclick="showInfo()">Info</button>
+        </div>
+    </nav>
+
+    <main class="custom-container mt-4">
+        <div id="tombolThread">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                data-bs-target="#createThreadModal">Buat
+                Thread</button>
+        </div>
+
+
+        <!-- Konten Utama/Postingan Threads -->
+        <div id="contentThreads" class="content-threads">
+            <div class="order-buttons">
+                <button type="button" class="btn btn-light" onclick="showNewest()">Terbaru</button>
+                <button type="button" class="btn btn-light" onclick="showLiked()">Disukai</button>
+            </div>
+            <div class="card-columns">
+                <!-- Di dalam loop for untuk menampilkan setiap thread -->
+                {% for thread in thread_list %}
+                <!-- Konten thread -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="media">
+                            {% if thread.profile_pic_real %}
+                            <div class="media-left">
+                                <a href="/user/{{ thread.username }}">
+                                    <img src="{{ url_for('static', filename=thread.profile_pic_real) }}"
+                                        alt="Profile Image" class="rounded-circle profile-pic" width="64" height="64">
+                                </a>
+                            </div>
+                            {% endif %}
+                            <div class="media-content">
+                                <div class="content">
+                                    {% if thread.profile_pic_real %}
+                                    <p>
+                                        <strong>{{ thread.profile_name }}</strong> <small>@{{ thread.username }}</small>
+                                        <br />
+                                        <small>{{ thread.date }}</small>
+                                    </p>
+                                    {{ thread.post_content }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if thread.image_file_path %}
+                            <a class="media-right">
+                                <img src="{{ url_for('static', filename=thread.image_file_path) }}" class="card-img-top"
+                                    alt="Thread Image">
+                            </a>
+                            {% endif %}
+                            <!-- Menggunakan thread_id sebagai parameter -->
+                            <a href="{{ url_for('comment', thread_id=thread['custom_thread_id']) }}"
+                                class="btn btn-primary">Komentar</a>
+
+                            {% if thread.username == user_info.username %}
+                            <button type="button" class="btn btn-danger"
+                                onclick="deleteThread('{{ thread.post_content }}')">Hapus Thread</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+
+
+        <!-- Acara -->
+        <div id="contentEvents" class="content-events" style="display: none;">
+            <!-- Tombol untuk membuka modal acara -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEventModal">Buat
+                Acara</button>
+
+            <!-- Daftar acara yang sudah ada -->
+            <div id="eventList" class="mt-4">
+                {% for event in eventList %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <!-- Tampilkan informasi acara -->
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text">Organizer: {{ event.organizer }}</p>
+                        <p class="card-text">Tanggal: {{ event.date }}</p>
+                        <p class="card-text">Deskripsi: {{ event.content }}</p>
+                        {% if event.image_file_path %}
+                        <img src="{{ url_for('static', filename=event.image_file_path) }}" class="card-img-top"
+                            alt="Event Image">
+                        {% endif %}
+
+                        <!-- Tampilkan tombol delete acara hanya untuk pembuat acara -->
+                        {% if event.organizer == user_info.username %}
+                        <button type="button" class="btn btn-danger" onclick="deleteEvent('{{ event.title }}')">Delete
+                            Acara</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- Modal untuk formulir acara -->
+        <div class="modal fade" id="createEventModal" tabindex="-1" role="dialog"
+            aria-labelledby="createEventModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createEventModalLabel">Buat Acara</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Formulir acara -->
+                        <form id="createEventForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="eventTitle" class="form-label">Judul Acara:</label>
+                                <input type="text" class="form-control" id="eventTitle" name="title" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="eventContent" class="form-label">Isi Acara:</label>
+                                <textarea class="form-control" id="eventContent" name="content" rows="4"
+                                    required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="eventImage" class="form-label">Tambahkan Gambar Acara:</label>
+                                <input type="file" class="form-control" id="eventImage" name="image" accept="image/*">
+                            </div>
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-primary" onclick="submitEventForm()">Buat
+                                    Acara</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Info Content -->
+        <div id="contentInfo" class="content-info" style="display: none;">
+            {% for info in info_list %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    {{ info.username }} - {{ info.date }}
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Isi info: {{ info.text }}</p>
+
+                    {% if info.pic_file_path %}
+                    <img src="{{ url_for('static', filename=info.pic_file_path) }}" class="card-img-top" alt="Info Image">
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Modal -->
+        <!-- Modal -->
+        <div class="modal" tabindex="-1" role="dialog" id="createThreadModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Buat Thread</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Formulir thread -->
+                        <form id="createThreadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="postContent" class="form-label">Isi thread:</label>
+                                <textarea class="form-control" id="postContent" name="postContent" rows="4"
+                                    required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="imageUpload" class="form-label">Tambahkan Gambar:</label>
+                                <input class="form-control" type="file" id="imageUpload" name="imageUpload"
+                                    accept="image/*">
+                            </div>
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-primary" onclick="submitThreadForm()">Buat
+                                    Thread</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </main>
+
+</body>
+
+</html>

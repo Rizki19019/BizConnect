@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+    <meta property="og:title" content="Biz Connect" />
+    <meta property="og:description" content="Bersama Komunitas Bisnis: Temukan, Bagikan, Bangun Bersama!" />
+    <meta property="og:image" content="{{ url_for('static', filename='ogimage.png') }}" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+
+    <title>Register</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        function sign_up() {
+            // Deklarasi variabel untuk elemen-elemen HTML
+            let inputEmail = $('#email');
+            let inputUsername = $('#username');
+            let inputPassword = $('#password');
+
+            // Mendapatkan nilai dari elemen-elemen
+            let email = inputEmail.val();
+            let username = inputUsername.val();
+            let password = inputPassword.val();
+
+
+            // Validasi duplikasi email dan username di sisi klien
+            if ($('#emailMessage').hasClass('text-danger') || $('#usernameMessage').hasClass('text-danger')) {
+                alert('Email or username already exists');
+                return;
+            }
+
+            // Lanjutkan dengan proses sign-up
+            $.ajax({
+                type: 'POST',
+                url: '/sign_up/save',
+                data: {
+                    email_give: email,
+                    username_give: username,
+                    password_give: password,
+                },
+                success: function (response) {
+                    alert('Registration successful!');
+                    window.location.replace('/login');
+                },
+                error: function (error) {
+                    console.error('Error signing up:', error);
+                    alert('Error signing up. Please try again.');
+                },
+            });
+        }
+
+        function validateEmail() {
+            let inputEmail = $('#email');
+            let email = inputEmail.val();
+            let emailMessage = $('#emailMessage');
+
+            if (email === '') {
+                emailMessage.text('Masukkan alamat email Anda.').addClass('text-danger');
+                return false;
+            } else if (!is_email(email)) {
+                emailMessage.text('Format email tidak valid.').addClass('text-danger');
+                return false;
+            } else {
+                emailMessage.text('').removeClass('text-danger');
+                return true;
+            }
+        }
+
+        function validateUsername() {
+            let inputUsername = $('#username');
+            let username = inputUsername.val();
+            let usernameMessage = $('#usernameMessage');
+
+            if (username === '') {
+                // Menampilkan pesan kesalahan jika username kosong
+                usernameMessage.text('Masukkan username Anda.').addClass('text-danger');
+                return false;
+            } else if (!is_nickname(username)) {
+                // Menampilkan pesan kesalahan jika format username tidak valid
+                usernameMessage.text('Periksa username Anda. Masukkan 2-10 karakter Bahasa Indonesia, angka, atau karakter khusus (._-)').addClass('text-danger');
+                return false;
+            } else {
+                // Menghapus pesan kesalahan jika username valid
+                usernameMessage.text('').removeClass('text-danger');
+                return true;
+            }
+        }
+
+        function validatePassword() {
+            let inputPassword = $('#password');
+            let password = inputPassword.val();
+            let passwordMessage = $('#passwordMessage');
+
+            if (password === '') {
+                passwordMessage.text('Masukkan kata sandi Anda.').addClass('text-danger');
+                return false;
+            } else if (!is_password(password)) {
+                passwordMessage.text('Periksa kata sandi Anda. Masukkan 8-20 karakter Bahasa Indonesia, angka, atau karakter khusus (!@#$%^&*)').addClass('text-danger');
+                return false;
+            } else {
+                passwordMessage.text('').removeClass('text-danger');
+                return true;
+            }
+        }
+
+        function is_email(email) {
+            console.log("Email value:", email);
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function is_nickname(asValue) {
+            var regExp = /^(?=.*[a-zA-Z])[-a-zA-Z0-9_.]{2,10}$/;
+            return regExp.test(asValue);
+        }
+
+        function is_password(asValue) {
+            var regExp = /^(?=.*\d)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%^&*]{8,20}$/;
+            return regExp.test(asValue);
+        }
+
+
+        function check_dup() {
+            let inputEmail = $('#email');
+            let inputUsername = $('#username');
+            let email = inputEmail.val();
+            let username = inputUsername.val();
+            let emailMessage = $('#emailMessage');
+            let usernameMessage = $('#usernameMessage');
+            
+            // Validasi format email
+            if (!validateEmail()) {
+                return;
+            }
+
+            // Validasi format username
+            if (!validateUsername()) {
+                return;
+            }
+
+            // Pemeriksaan keberadaan email dan username melalui AJAX
+            $.ajax({
+                type: 'POST',
+                url: '/sign_up/check_dup',
+                data: {
+                    email_give: email,
+                    username_give: username,
+                },
+                success: function (response) {
+                    console.log(response);
+
+                    if (response.email_exists) {
+                        emailMessage.text('This email is already in use.').addClass('text-danger');
+
+                    } else {
+                        emailMessage.text('This email is available.').removeClass('text-danger');
+                    }
+
+                    if (response.username_exists) {
+                        usernameMessage.text('This username is already in use.').addClass('text-danger');
+
+                    } else {
+                        usernameMessage.text('This username is available.').removeClass('text-danger');
+                    }
+                },
+                error: function (error) {
+                    console.error('Error checking email and username duplication:', error);
+                    emailMessage.text('Error checking email and username duplication. Please try again.').addClass('text-danger');
+                    usernameMessage.text('');
+                },
+            });
+        }
+
+
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="dftr">Atau,<span><a href="{{ url_for('login') }}">Login</a></span></p>
+                <h2>Register</h2>
+                <form method="POST" action="/sign_up/save">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                            oninput="validateEmail(); check_dup()">
+                        <div id="emailMessage"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" class="form-control" id="username" name="username" required
+                            oninput="validateUsername(); check_dup()">
+                        <div id="usernameMessage"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password" required
+                        oninput="validatePassword()">
+                        <div id="passwordMessage"></div>
+                    </div>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col text-center">
+                                <button type="button" class="btn btn-block btn-primary"
+                                    onclick="sign_up()">Registrasi</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

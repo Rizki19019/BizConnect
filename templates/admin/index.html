@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+    <meta property="og:title" content="Biz Connect" />
+    <meta property="og:description" content="Bersama Komunitas Bisnis: Temukan, Bagikan, Bangun Bersama!" />
+    <meta property="og:image" content="{{ url_for('static', filename='ogimage.png') }}" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script> <!-- Ganti versi jQuery ke 3.6.4 -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        function sign_out() {
+            $.removeCookie("mytoken", { path: "/" });
+            alert("Signed out!");
+            window.location.href = "/login";
+        }
+
+
+        function showContentManagement() {
+            document.getElementById('content-management').style.display = 'block';
+            document.getElementById('member-management').style.display = 'none';
+            document.getElementById('info-management').style.display = 'none';
+        }
+
+        function showMemberManagement() {
+            document.getElementById('content-management').style.display = 'none';
+            document.getElementById('member-management').style.display = 'block';
+            document.getElementById('info-management').style.display = 'none';
+            loadMemberList()
+        }
+
+        function showInfoManagement() {
+            document.getElementById('content-management').style.display = 'none';
+            document.getElementById('member-management').style.display = 'none';
+            document.getElementById('info-management').style.display = 'block';
+            loadInfoList(); // Load existing info items when switching to the Info Management section
+        }
+
+        function loadMemberList() {
+            $.ajax({
+                type: "GET",
+                url: "/get_member_list",
+                success: function (response) {
+                    if (response.result === "success") {
+                        displayMemberList(response.memberList);
+                    } else {
+                        alert(response.msg);
+                    }
+                },
+                error: function (error) {
+                    console.error("Error loading member list:", error);
+                    alert("Terjadi kesalahan saat memuat daftar anggota.");
+                }
+            });
+        }
+
+        function deleteMember(username) {
+            var confirmation = confirm("Apakah Anda yakin ingin menghapus anggota ini?");
+            if (confirmation) {
+                $.ajax({
+                    type: "POST",
+                    url: "/delete_member",
+                    data: { username: username },
+                    success: function (response) {
+                        if (response.result === "success") {
+                            alert(response.msg);
+                            // Perbarui daftar anggota setelah penghapusan berhasil
+                            loadMemberList();
+                        } else {
+                            alert(response.msg);
+                        }
+                    },
+                    error: function (error) {
+                        console.error("Error deleting member:", error);
+                        alert("Terjadi kesalahan saat menghapus anggota.");
+                    }
+                });
+            }
+        }
+
+        function displayMemberList(memberList) {
+            var memberListContainer = $("#member-list");
+            memberListContainer.empty(); // Mengosongkan elemen daftar anggota yang sudah ada
+            memberList.forEach(function (member) {
+                var listItem = '<li class="list-group-item">' +
+                    '<div class="member-item-container">' +
+                    '<div class="member-username">' + member.username + '</div>' +
+                    '<div class="member-buttons">' +
+                    '<button class="btn btn-sm btn-danger" onclick="deleteMember(\'' + member.username + '\')">Hapus</button>' +
+                    '</div></div></li>';
+                memberListContainer.append(listItem);
+            });
+        }
+
+        function saveInfo() {
+            var text = $("#input-info-text").val();
+            var picFile = $("#input-info-pic")[0].files[0];
+            var formData = new FormData();
+            formData.append("text", text);
+            formData.append("picFile", picFile);
+
+            $.ajax({
+                type: "POST",
+                url: "/save_info",
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.result === "success") {
+                        alert(response.msg);
+                        // Perbarui daftar info setelah penyimpanan berhasil
+                        loadInfoList();
+                        // Tutup modal setelah penyimpanan berhasil
+                        $("#addInfoModal").modal("hide");
+                    } else {
+                        alert(response.msg);
+                    }
+                },
+                error: function (error) {
+                    console.error("Error saving info:", error);
+                    alert("Terjadi kesalahan saat menyimpan info.");
+                }
+            });
+        }
+
+        function loadInfoList() {
+            $.ajax({
+                type: "GET",
+                url: "/get_info_list",
+                success: function (response) {
+                    if (response.result === "success") {
+                        displayInfoList(response.infoList);
+                    } else {
+                        alert(response.msg);
+                    }
+                },
+                error: function (error) {
+                    console.error("Error loading info:", error);
+                    alert("An error occurred while loading info.");
+                }
+            });
+        }
+
+        // Function to display the list of information items
+        function displayInfoList(infoList) {
+            var infoListContainer = $("#info-list");
+            infoListContainer.empty(); // Clear existing list items
+            infoList.forEach(function (info) {
+                var listItem = '<li class="list-group-item">' +
+                    '<div class="info-item-container">' +
+                    '<div class="info-text">' + info.text + '</div>';
+                if (info.pic_file_path) {
+                    listItem += '<img src="' + info.pic_file_path + '" alt="Info Image" class="info-image">';
+                }
+                listItem += '<div class="info-buttons">' +
+                    '<button class="btn btn-sm btn-info" onclick="editInfo(this.parentElement)">Edit</button>' +
+                    '<button class="btn btn-sm btn-danger" onclick="deleteInfo(this.parentElement)">Hapus</button>' +
+                    '</div></div></li>';
+                infoListContainer.append(listItem);
+            });
+        }
+        function editInfo(element) {
+            var text = $(element).siblings('.info-text').text(); // Ambil teks dari elemen info
+            var originalText = text;
+            var modal = $('#editInfoModal');
+
+            // Set nilai teks dan simpan nilai asli untuk digunakan saat penyimpanan
+            modal.find('#edit-info-text').val(text);
+            modal.find('#edit-info-original-text').val(originalText);
+
+            // Buka modal edit
+            modal.modal('show');
+        }
+        // Initial load of information list when the page is loaded
+        loadInfoList();
+        function updateInfo() {
+            var originalText = $('#edit-info-original-text').val();
+            var newText = $('#edit-info-text').val();
+            var picFile = $('#edit-info-pic')[0].files[0];
+
+            // Lakukan pembaruan hanya jika teks baru tidak sama dengan teks asli
+            if (newText !== originalText) {
+                // Persiapkan data untuk dikirimkan melalui AJAX
+                var formData = new FormData();
+                formData.append('originalText', originalText);
+                formData.append('newText', newText);
+                formData.append('picFile', picFile);
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_info',
+                    data: formData,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            alert(response.msg);
+                            // Perbarui daftar info setelah penyimpanan berhasil
+                            loadInfoList();
+                            // Tutup modal setelah penyimpanan berhasil
+                            $('#editInfoModal').modal('hide');
+                        } else {
+                            alert(response.msg);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error updating info:', error);
+                        alert('Terjadi kesalahan saat memperbarui info.');
+                    }
+                });
+            } else {
+                // Jika teks tidak berubah, tutup modal tanpa melakukan pembaruan
+                $('#editInfoModal').modal('hide');
+            }
+        }
+
+
+
+        function deleteInfo(element) {
+            var confirmation = confirm("Apakah Anda yakin ingin menghapus info ini?");
+            if (confirmation) {
+                var text = $(element).siblings('.info-text').text(); // Ambil teks dari elemen info
+
+                $.ajax({
+                    type: "POST",
+                    url: "/delete_info",
+                    data: { text: text },
+                    success: function (response) {
+                        if (response.result === "success") {
+                            alert(response.msg);
+                            // Perbarui daftar info setelah penghapusan berhasil
+                            loadInfoList();
+                        } else {
+                            alert(response.msg);
+                        }
+                    },
+                    error: function (error) {
+                        console.error("Error deleting info:", error);
+                        alert("Terjadi kesalahan saat menghapus info.");
+                    }
+                });
+            }
+        }
+
+
+
+    </script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #1da1f2;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-image {
+            max-width: 600px;
+            /* Maksimum lebar 600 piksel */
+            max-height: 600px;
+            /* Maksimum tinggi 600 piksel */
+            width: auto;
+            /* Tinggi disesuaikan untuk menjaga aspek rasio gambar */
+            height: auto;
+            /* Lebar disesuaikan untuk menjaga aspek rasio gambar */
+            margin-top: 10px;
+
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .ellipsis-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .ellipsis-btn:hover {
+            color: #ddd;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            right: 0;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .admin-nav {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .admin-nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px;
+            margin: 0 10px;
+        }
+
+        .management-section {
+            padding: 20px;
+            margin: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .list-group {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .list-group-item {
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            top: 2500px;
+            left: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #1da1f2;
+            border-radius: 60%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo img {
+            max-width: 200%;
+            max-height: 196%;
+            border-radius: 70px;
+        }
+    </style>
+    <title>Admin Dashboard</title>
+</head>
+
+<body>
+
+    <header>
+        <a class="logo" href="/">
+            <img src="{{ url_for('static', filename='logo.png') }}" />
+        </a>
+        <div class="dropdown">
+            <button class="ellipsis-btn" onclick="toggleDropdown()">☰</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-nav">
+        <a href="#" onclick="showContentManagement()">Kelola Konten</a>
+        <a href="#" onclick="showMemberManagement()">Kelola Anggota</a>
+        <a href="#" onclick="showInfoManagement()">Kelola Info</a>
+    </div>
+
+    <main class="container mt-4">
+        <div id="content-management" class="management-section">
+            <h2>Kelola Konten</h2>
+            <ul class="list-group">
+                <li class="list-group-item">Konten 1</li>
+                <li class="list-group-item">Konten 2</li>
+                <li class="list-group-item">Konten 3</li>
+            </ul>
+        </div>
+
+        <div id="member-management" class="management-section" style="display: none;">
+            <h2>Kelola Anggota</h2>
+            <ul id="member-list" class="list-group">
+            </ul>
+        </div>
+
+        <!-- New section for managing information -->
+        <div id="info-management" class="management-section" style="display: none;">
+            <h2>Kelola Info</h2>
+            <!-- Tambahkan tombol untuk membuka modal tambah info -->
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addInfoModal">Tambah Info</button>
+
+            <!-- Modal Tambah Info -->
+            <div class="modal" id="addInfoModal" tabindex="-1" role="dialog" aria-labelledby="addInfoModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addInfoModalLabel">Tambah Info</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add-info-form">
+                                <div class="form-group">
+                                    <label for="input-info-text">Teks Info</label>
+                                    <textarea class="form-control" id="input-info-text" rows="3"
+                                        placeholder="Masukkan teks info"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-info-pic">Foto Info</label>
+                                    <input type="file" class="form-control-file" id="input-info-pic">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="saveInfo()">Simpan Info</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal Edit Info -->
+            <div class="modal" id="editInfoModal" tabindex="-1" role="dialog" aria-labelledby="editInfoModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editInfoModalLabel">Edit Info</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="edit-info-form">
+                                <input type="hidden" id="edit-info-original-text">
+                                <div class="form-group">
+                                    <label for="edit-info-text">Teks Info</label>
+                                    <textarea class="form-control" id="edit-info-text" rows="3"
+                                        placeholder="Masukkan teks info"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-info-pic">Foto Info</label>
+                                    <input type="file" class="form-control-file" id="edit-info-pic">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="updateInfo()">Update Info</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ul id="info-list" class="list-group">
+
+            </ul>
+        </div>
+    </main>
+
+
+</body>
+
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+    <meta property="og:title" content="Biz Connect" />
+    <meta property="og:description" content="Bersama Komunitas Bisnis: Temukan, Bagikan, Bangun Bersama!" />
+    <meta property="og:image" content="{{ url_for('static', filename='ogimage.png') }}" />
+    <!-- Sertakan Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #1da1f2;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .comments-section {
+            padding: 20px;
+            margin: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .comment-box {
+            position: relative;
+        }
+
+        .floating-textarea {
+            width: 100%;
+            resize: none;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .floating-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comment-button {
+            background-color: #1da1f2;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        .comments-list {
+            margin-top: 20px;
+        }
+
+        .comment {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+
+        .comment:last-child {
+            border-bottom: none;
+        }
+
+        .reply-button,
+        .like-button {
+            margin-left: 10px;
+            color: #1da1f2;
+            cursor: pointer;
+        }
+    </style>
+    <title>Komentar</title>
+</head>
+
+<body>
+    <h1>Komentar untuk Thread {{ thread_data.thread_id }}</h1>
+
+    <header>
+        <div class="logo">Logo</div>
+
+    </header>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-4">Back</a>
+
+
+    <main class="container mt-4">
+
+
+        <div class="comments-section">
+            <div id="content" class="thread border p-3 mb-4">
+                <h2>{{ thread_data.thread_title }}</h2>
+                <p>{{ thread_data.thread_content }}</p>
+                <span>Posted by: {{ thread_data.username }} | Tanggal: {{ thread_data.date }}</span>
+            </div>
+            <div class="comment-box">
+                <textarea class="floating-textarea" placeholder="Tambahkan komentar..."></textarea>
+                <div class="floating-buttons">
+                    <button class="comment-button">Tambah Komentar</button>
+                </div>
+            </div>
+
+            <!-- Daftar Komentar -->
+            <div class="comments-list">
+                {% for comment_data in comment %}
+                <div class="comment">
+                    <strong>{{ comment.username }}</strong>
+                    <p>{{ comment.content }}</p>
+                    <span class="reply-button" onclick="showReplyForm()">Balas</span>
+                    <span class="like-button" onclick="likeComment()">Suka</span>
+
+                    <!-- Form Balas Komentar -->
+                    <div class="comment-box" style="display: none;">
+                        <textarea class="floating-textarea" placeholder="Balas komentar..."></textarea>
+                        <div class="floating-buttons">
+                            <button class="comment-button">Balas</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+
+    </main>
+
+    <!-- Sertakan Bootstrap JS dan jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        function showReplyForm(event) {
+            const replyForms = document.querySelectorAll('.comment-box');
+            replyForms.forEach(form => form.style.display = 'none');
+            const currentComment = event.target.parentNode.parentNode;
+            const replyForm = currentComment.querySelector('.comment-box');
+            replyForm.style.display = 'block';
+        }
+
+
+        function likeComment() {
+            alert('Menyukai komentar!');
+        }
+    </script>
+</body>
+
+</html>
